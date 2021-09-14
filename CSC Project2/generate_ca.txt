@@ -1,0 +1,21 @@
+#!/bin/bash                                                             │
+# To generate the certificate                                           │
+#       Output:                                                         │
+#               - ca.key                                                │
+#               - ca.crt                                                │
+#                       this file is going to install at the victim's ho│
+st                                                                      │
+#                                                                       │
+# How to instll certificate in victim                                   │
+#       Step with command:                                              │
+#               cd /usr/local/share/ca-certificates/                    │
+#               sudo mkdir school                                       │
+#               cp <PATH>/ca.crt /usr/local/share/ca-certificates/ca.crt│
+#               sudo chmod 755 /usr/local/share/ca-certificates/        │
+#               sudo chmod 644 /usr/local/share/ca-certificates/ca.crt  │
+#               sudo update-ca-certificates                             │
+# PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bi│
+n                                                                       │
+# export PATH                                                           │
+openssl genrsa -out ca.key 4096                                        │
+# openssl req -new -x509 -days 1826 -key ca.key -out ca.crt
