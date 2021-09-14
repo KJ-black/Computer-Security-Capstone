@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+# coding: utf-8
+"""
+Author: Kuan Ju, Chen
+ID: 0711529
+Date: 2021/05/13
+"""
+import os
+import sys
+
+if __name__=="__main__":	
+	# get the argv parameters 
+	try:
+		attacker_port = sys.argv[1] 
+	except:
+		sys.exit("attack_server <attacker_port>")
+	
+	os.system("python3 -m http.server %s &"%(attacker_port))

